@@ -347,7 +347,7 @@ if (!gotLock) {
 
   app.whenReady().then(() => {
     store.load();
-    if (process.platform === 'win32') app.setAppUserModelId('com.local.reminders');
+    if (process.platform === 'win32') app.setAppUserModelId('Reminders');
     const s = store.getSettings();
     applyNativeTheme(s.theme);
     setupMenu();
