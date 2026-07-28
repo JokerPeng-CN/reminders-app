@@ -6,6 +6,7 @@ src/renderer/lib/vue.global.prod.js
 *.corrupt
 *.log
 *.png
+!screenshots/*.png
 main-shot.png
 float-shot.png
 test-out.txt
