@@ -1,0 +1,46 @@
+{
+  "name": "reminders-app",
+  "version": "1.0.0",
+  "description": "苹果风提醒事项桌面应用 - 含悬浮小窗",
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --win",
+    "build:portable": "electron-builder --win portable",
+    "postinstall": "node -e \"try{require('fs').copyFileSync('node_modules/vue/dist/vue.global.prod.js','src/renderer/lib/vue.global.prod.js')}catch(e){}\" && node build/gen-icon.js",
+    "gen-icon": "node build/gen-icon.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "dependencies": {
+    "vue": "^3.4.0"
+  },
+  "build": {
+    "appId": "com.local.reminders",
+    "productName": "提醒事项",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/vue/dist/vue.global.prod.js"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "提醒事项"
+    }
+  }
+}
