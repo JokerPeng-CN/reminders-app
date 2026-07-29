@@ -6,7 +6,6 @@ contextBridge.exposeInMainWorld('floatApi', {
   create: (data) => ipcRenderer.invoke('store:create', data),
   toggle: (id) => ipcRenderer.invoke('store:toggle', id),
   toggleSubtask: (id, subId) => ipcRenderer.invoke('store:toggleSubtask', id, subId),
-  remove: (id) => ipcRenderer.invoke('store:remove', id),
   getSettings: () => ipcRenderer.invoke('store:getSettings'),
   updateSettings: (patch) => ipcRenderer.invoke('store:updateSettings', patch),
   hide: () => ipcRenderer.send('float:hide'),

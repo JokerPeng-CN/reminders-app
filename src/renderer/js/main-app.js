@@ -124,7 +124,6 @@ createApp({
     function dueClass(r) { return window.ReminderUtil.dueClass(r); }
     function dueText(r) { return window.ReminderUtil.dueText(r); }
 
-    function formatDate(d) { return window.ReminderUtil.formatDate(d); }
     function prioText(p) { return p===2?'高':(p===1?'中':''); } // #29: 2=高, 1=中
     function repeatText(rp) {
       return { daily:'每天', weekdays:'工作日', weekly:'每周', monthly:'每月', yearly:'每年' }[rp] || rp;
@@ -141,7 +140,7 @@ createApp({
         };
       } else {
         editor.data = {
-          id: null, title: '', notes: '', listId: currentListId() || 'default',
+          id: null, title: '', notes: '', listId: currentListId(),
           priority: 0, due: '', repeat: null, tagsStr: '', subtasks: []
         };
       }
@@ -209,7 +208,7 @@ createApp({
       if (!quickTitle.value.trim()) return;
       try {
         const payload = {
-          title: quickTitle.value.trim(), listId: currentListId() || 'default',
+          title: quickTitle.value.trim(), listId: currentListId(),
           priority: 0, due: null, repeat: null, tags: [], subtasks: []
         };
         await window.api.create(payload);
@@ -350,13 +349,14 @@ createApp({
       }
     }
 
+    const cleanups = [];
+
     onMounted(async () => {
       await loadAll();
       document.addEventListener('keydown', handleKeydown);
-      window.api.onFocusReminder(async (id) => {
+      cleanups.push(window.api.onFocusReminder(async (id) => {
         view.value = 'all';
         await loadAll();
-        // #18: 滚动到并高亮对应事项
         await nextTick();
         setTimeout(() => {
           const el = document.querySelector('.reminder[data-id="' + id + '"]');
@@ -366,16 +366,17 @@ createApp({
             setTimeout(() => el.classList.remove('flash'), 2000);
           }
         }, 200);
-      });
-      window.api.onNewReminder(() => { openEditor(null); });
-      window.api.onToggleTheme(() => { toggleTheme(); });
-      window.api.onOpenHelp(() => { helpOpen.value = true; });
-      window.api.onThemeChanged((newTheme) => { theme.value = newTheme; applyTheme(); settings.data.theme = newTheme; }); // 问题1: 悬浮窗主题同步
-      window.api.onRefresh(() => loadAll()); // 问题2: 悬浮窗操作后刷新主窗
+      }));
+      cleanups.push(window.api.onNewReminder(() => { openEditor(null); }));
+      cleanups.push(window.api.onToggleTheme(() => { toggleTheme(); }));
+      cleanups.push(window.api.onOpenHelp(() => { helpOpen.value = true; }));
+      cleanups.push(window.api.onThemeChanged((newTheme) => { theme.value = newTheme; applyTheme(); settings.data.theme = newTheme; }));
+      cleanups.push(window.api.onRefresh(() => loadAll()));
     });
 
     onUnmounted(() => {
       document.removeEventListener('keydown', handleKeydown);
+      cleanups.forEach(fn => fn());
     });
 
     return {

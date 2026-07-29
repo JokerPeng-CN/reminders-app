@@ -1,6 +1,5 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { ipcRenderer } = require('electron');
 
-// 在 preload 中处理拖拽+点击，避免 drag region 吞掉鼠标事件
 window.addEventListener('DOMContentLoaded', () => {
   let dragStart = null;
 
@@ -28,8 +27,4 @@ window.addEventListener('DOMContentLoaded', () => {
       dragStart = null;
     }
   });
-});
-
-contextBridge.exposeInMainWorld('logoApi', {
-  // 保留兼容，但实际点击和拖拽已由 preload 直接处理
 });

@@ -118,7 +118,11 @@ function save(data) {
   if (fs.existsSync(DATA_FILE)) {
     try { fs.copyFileSync(DATA_FILE, BAK_FILE); } catch (e) {}
   }
-  fs.renameSync(TMP_FILE, DATA_FILE);
+  try {
+    fs.renameSync(TMP_FILE, DATA_FILE);
+  } catch (e) {
+    console.error('save rename failed', e.message);
+  }
 }
 
 function get() {

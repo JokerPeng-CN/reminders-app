@@ -12,8 +12,9 @@ let logoWindow = null;
 let tray = null;
 let quitting = false;
 let pendingMainMsgs = []; // #7 + H3: 排队等待主窗口加载的 IPC 消息(数组防丢失)
-let floatMode = 'float'; // 问题1: 当前悬浮窗显示模式 'float' | 'logo'
-let savedPos = null; // 问题1: 共享位置记忆
+const FLOAT = 'float', LOGO = 'logo';
+let floatMode = FLOAT;
+let savedPos = null;
 
 function makeTrayIcon(count) {
   // 用 PNG 位图字体生成托盘图标 (Windows 不支持 SVG data URL)
@@ -132,10 +133,6 @@ function createFloatWindow() {
   floatWindow.loadFile(path.join(__dirname, '..', 'renderer', 'float.html'));
   floatWindow.setAlwaysOnTop(true, 'screen-saver');
 
-  floatWindow.on('blur', () => {
-    // 失焦不自动隐藏，保持悬浮
-  });
-
   // 问题1: 拖动时记忆位置
   floatWindow.on('move', () => {
     if (floatWindow && !floatWindow.isDestroyed()) {
@@ -199,19 +196,19 @@ function minimizeToLogo() {
     savedPos = { x, y };
     floatWindow.hide();
   }
-  floatMode = 'logo';
+  floatMode = LOGO;
   showLogo();
 }
 
 // #6 + H1 + H2: 悬浮窗首次显示时等 did-finish-load，检查窗口销毁和主窗可见性
 function showFloat() {
   // 问题1: 如果当前是logo模式，先切换回float
-  if (floatMode === 'logo' && logoWindow && !logoWindow.isDestroyed() && logoWindow.isVisible()) {
+  if (floatMode === LOGO && logoWindow && !logoWindow.isDestroyed() && logoWindow.isVisible()) {
     const [x, y] = logoWindow.getPosition();
     savedPos = { x, y };
     logoWindow.hide();
   }
-  floatMode = 'float';
+  floatMode = FLOAT;
   if (!floatWindow || floatWindow.isDestroyed()) {
     floatWindow = null;
     createFloatWindow();
@@ -235,10 +232,10 @@ function hideFloat() {
 
 // 问题1: 切换悬浮窗显示/隐藏 (按当前模式)
 function toggleFloat() {
-  const win = floatMode === 'logo' ? logoWindow : floatWindow;
+  const win = floatMode === LOGO ? logoWindow : floatWindow;
   if (!win || win.isDestroyed()) {
     // 窗口不存在，创建并显示float模式
-    floatMode = 'float';
+    floatMode = FLOAT;
     if (!floatWindow || floatWindow.isDestroyed()) {
       createFloatWindow();
       floatWindow.webContents.once('did-finish-load', () => {
@@ -252,7 +249,7 @@ function toggleFloat() {
   }
   if (win.isVisible()) win.hide();
   else {
-    if (floatMode === 'float' && !floatWindow.webContents.isLoading()) floatWindow.webContents.send('float-refresh');
+    if (floatMode === FLOAT && !floatWindow.webContents.isLoading()) floatWindow.webContents.send('float-refresh');
     win.showInactive();
   }
 }

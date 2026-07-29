@@ -13,24 +13,26 @@ function reset() {
 }
 
 function check() {
-  const now = Date.now();
-  const aheadMs = (store.getSettings().remindAhead || 0) * 60 * 1000;
-  // M5: 只通知最近15分钟内到期(含提前量)的项，避免重启时通知风暴
-  const windowMs = 15 * 60 * 1000;
-  const due = store.getDueSoon();
-  due.forEach(r => {
-    const dueTime = new Date(r.due).getTime();
-    if (isNaN(dueTime)) return;
-    if (dueTime - now <= aheadMs && !notifiedIds.has(r.id)) {
-      // 到期时间在现在或过去，但不超过 windowMs+aheadMs 前(避免老逾期项全部弹出)
-      const overdueBy = now - dueTime;
-      if (overdueBy > windowMs + aheadMs) return; // H1: 移除 && aheadMs===0，所有情况都防风暴
-      notifiedIds.add(r.id);
-      showNotify(r);
-    }
-  });
-  const active = new Set(store.getActive().map(r => r.id));
-  notifiedIds.forEach(id => { if (!active.has(id)) notifiedIds.delete(id); });
+  try {
+    const now = Date.now();
+    const aheadMs = (store.getSettings().remindAhead || 0) * 60 * 1000;
+    const windowMs = 15 * 60 * 1000;
+    const due = store.getDueSoon();
+    due.forEach(r => {
+      const dueTime = new Date(r.due).getTime();
+      if (isNaN(dueTime)) return;
+      if (dueTime - now <= aheadMs && !notifiedIds.has(r.id)) {
+        const overdueBy = now - dueTime;
+        if (overdueBy > windowMs + aheadMs) return;
+        notifiedIds.add(r.id);
+        showNotify(r);
+      }
+    });
+    const active = new Set(store.getActive().map(r => r.id));
+    notifiedIds.forEach(id => { if (!active.has(id)) notifiedIds.delete(id); });
+  } catch (e) {
+    console.error('notify check error', e);
+  }
 }
 
 function showNotify(r) {

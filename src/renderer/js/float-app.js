@@ -1,4 +1,4 @@
-const { createApp, ref, onMounted, nextTick } = Vue;
+const { createApp, ref, onMounted, onUnmounted, nextTick } = Vue;
 
 createApp({
   setup() {
@@ -85,9 +85,15 @@ createApp({
     }
     function dueText(r) { return window.ReminderUtil.dueText(r, { overduePrefix: '已逾期' }); }
 
+    let onRefreshCleanup = null;
+
     onMounted(() => {
       refresh();
-      window.floatApi.onRefresh(() => refresh());
+      onRefreshCleanup = window.floatApi.onRefresh(() => refresh());
+    });
+
+    onUnmounted(() => {
+      if (onRefreshCleanup) onRefreshCleanup();
     });
 
     return { items, settings, adding, newTitle, addInput, expandedId,
