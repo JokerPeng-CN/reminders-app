@@ -176,7 +176,7 @@
     </div>
 
     <!-- 设置 -->
-    <div v-if="settings.open" class="overlay" @click.self="settings.open=false">
+    <div v-if="settings.open" class="overlay" @click.self="closeSettings">
       <div class="editor">
         <h3>设置</h3>
         <div class="field" v-for="(opt,key) in settingDefs" :key="key">

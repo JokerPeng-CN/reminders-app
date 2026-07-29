@@ -286,6 +286,10 @@ createApp({
     function openSettings() {
       settings.open = true;
     }
+    function closeSettings() {
+      loadAll();
+      settings.open = false;
+    }
     async function saveSettings() {
       try {
         await window.api.updateSettings(toPlain(settings.data));
@@ -343,7 +347,7 @@ createApp({
       if (e.key === 'Escape') {
         if (listEditor.open) listEditor.open = false;
         else if (editor.open) editor.open = false;
-        else if (settings.open) settings.open = false;
+        else if (settings.open) closeSettings();
         else if (helpOpen.value) helpOpen.value = false;
       }
     }
@@ -385,7 +389,7 @@ createApp({
       setView, listName, listColor, dueClass, dueText, prioText, repeatText,
       openEditor, save, quickAdd, toggle, toggleSub, remove,
       openListEditor, saveList, deleteListFromEditor,
-      toggleFloat, toggleTheme, openSettings, saveSettings, exportData, importData, addSub, removeSubtask,
+      toggleFloat, toggleTheme, openSettings, closeSettings, saveSettings, exportData, importData, addSub, removeSubtask,
       captureKey, openHelp
     };
   }

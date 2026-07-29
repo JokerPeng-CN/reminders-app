@@ -247,7 +247,10 @@ function toggleFloat() {
     floatWindow.showInactive();
     return;
   }
-  if (win.isVisible()) win.hide();
+  if (win.isVisible()) {
+    win.hide();
+    if (floatMode === LOGO) floatMode = FLOAT;
+  }
   else {
     if (floatMode === FLOAT && !floatWindow.webContents.isLoading()) floatWindow.webContents.send('float-refresh');
     win.showInactive();
@@ -452,8 +455,8 @@ function refreshFloat() {
 
 // 问题2: 刷新主窗口数据
 function refreshMain() {
-  if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isLoading()) {
-    mainWindow.webContents.send('main:refresh');
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    sendToMain('main:refresh');
   }
 }
 

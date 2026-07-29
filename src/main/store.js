@@ -123,6 +123,7 @@ function save(data) {
     fs.renameSync(TMP_FILE, DATA_FILE);
   } catch (e) {
     console.error('save rename failed', e.message);
+    throw e;
   }
 }
 
