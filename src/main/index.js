@@ -252,7 +252,7 @@ function toggleFloat() {
     if (floatMode === LOGO) floatMode = FLOAT;
   }
   else {
-    if (floatMode === FLOAT && !floatWindow.webContents.isLoading()) floatWindow.webContents.send('float-refresh');
+    if (floatMode === FLOAT && floatWindow && !floatWindow.isDestroyed() && !floatWindow.webContents.isLoading()) floatWindow.webContents.send('float-refresh');
     win.showInactive();
   }
 }

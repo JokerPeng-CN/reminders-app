@@ -191,8 +191,8 @@ function getRecentActive(limit) {
   return d.reminders
     .filter(r => !r.completed)
     .sort((a, b) => {
-      const ad = a.due ? new Date(a.due).getTime() : Infinity;
-      const bd = b.due ? new Date(b.due).getTime() : Infinity;
+      const ad = a.due ? (new Date(a.due).getTime() || Infinity) : Infinity;
+      const bd = b.due ? (new Date(b.due).getTime() || Infinity) : Infinity;
       if (ad !== bd) return ad - bd;
       return (b.priority || 0) - (a.priority || 0);
     })
