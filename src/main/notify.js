@@ -7,6 +7,11 @@ let mainWindowRef = null;
 
 function setMainWindow(w) { mainWindowRef = w; }
 
+// M4: 导入数据后清理已通知记录，避免抑制新数据的通知
+function reset() {
+  notifiedIds.clear();
+}
+
 function check() {
   const now = Date.now();
   const aheadMs = (store.getSettings().remindAhead || 0) * 60 * 1000;
@@ -61,4 +66,4 @@ function stop() {
   if (timer) { clearInterval(timer); timer = null; }
 }
 
-module.exports = { start, stop, setMainWindow, check };
+module.exports = { start, stop, setMainWindow, check, reset };

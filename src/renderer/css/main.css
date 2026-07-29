@@ -184,7 +184,10 @@ body {
   background: var(--card); border-radius: 18px; padding: 22px;
   box-shadow: var(--shadow);
 }
+.editor.sticky { display: flex; flex-direction: column; overflow: hidden; }
 .editor h3 { font-size: 18px; margin-bottom: 16px; }
+.editor.sticky h3 { flex-shrink: 0; }
+.editor.sticky .editor-body { flex: 1; overflow-y: auto; }
 .field { margin-bottom: 14px; }
 .field label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 5px; }
 .field input, .field textarea, .field select {
@@ -195,7 +198,7 @@ body {
 .field textarea { resize: vertical; min-height: 60px; }
 .row2 { display: flex; gap: 10px; }
 .row2 .field { flex: 1; }
-.btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+.btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; flex-shrink: 0; padding-top: 14px; border-top: 1px solid var(--border); }
 .btn { padding: 8px 18px; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 500; }
 .btn.primary { background: var(--accent); color: #fff; }
 .btn.ghost { background: rgba(0,0,0,0.06); color: var(--text); }

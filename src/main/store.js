@@ -12,6 +12,8 @@ let cache = null;
 
 // #2 update() 允许修改的字段白名单
 const ALLOWED_FIELDS = ['title', 'notes', 'listId', 'priority', 'due', 'repeat', 'tags', 'subtasks'];
+// M5: settings 更新白名单
+const ALLOWED_SETTINGS = ['theme', 'floatCount', 'showFloatOnClose', 'autoStart', 'notifySound', 'remindAhead', 'hotkeyMain', 'hotkeyFloat'];
 
 function ensure() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -20,25 +22,9 @@ function ensure() {
 
 function defaultData() {
   const now = new Date();
-  const today = (offsetH, m = 0) => {
-    const d = new Date(now);
-    d.setHours(d.getHours() + offsetH, d.getMinutes() + m, 0, 0);
-    return d.toISOString();
-  };
-  const tomorrow = (h) => {
-    const d = new Date(now);
-    d.setDate(d.getDate() + 1); d.setHours(h, 0, 0, 0);
-    return d.toISOString();
-  };
-  // 优先级: 0=普通, 1=中等, 2=高 (#29)
   return {
     reminders: [
-      { id: 1, title: '欢迎使用提醒事项', notes: '双击事项可编辑，关闭主窗口会自动显示悬浮小窗。', listId: 'default', priority: 2, due: today(1), repeat: null, tags: ['帮助'], subtasks: [], completed: false, completedAt: null, createdAt: now.toISOString(), updatedAt: now.toISOString() },
-      { id: 2, title: '回复重要邮件', notes: '', listId: 'work', priority: 1, due: today(2), repeat: null, tags: [], subtasks: [{id:3,title:'整理今日待办',done:false}], completed: false, completedAt: null, createdAt: now.toISOString(), updatedAt: now.toISOString() },
-      { id: 3, title: '每天喝水 8 杯', notes: '保持健康习惯', listId: 'personal', priority: 0, due: today(3, 30), repeat: 'daily', tags: ['健康'], subtasks: [], completed: false, completedAt: null, createdAt: now.toISOString(), updatedAt: now.toISOString() },
-      { id: 4, title: '准备明天会议材料', notes: '', listId: 'work', priority: 2, due: tomorrow(9), repeat: null, tags: [], subtasks: [], completed: false, completedAt: null, createdAt: now.toISOString(), updatedAt: now.toISOString() },
-      { id: 5, title: '买牛奶和面包', notes: '超市', listId: 'personal', priority: 0, due: null, repeat: null, tags: ['购物'], subtasks: [], completed: false, completedAt: null, createdAt: now.toISOString(), updatedAt: now.toISOString() },
-      { id: 6, title: '已完成示例:整理桌面', notes: '', listId: 'default', priority: 0, due: null, repeat: null, tags: [], subtasks: [], completed: true, completedAt: now.toISOString(), createdAt: now.toISOString(), updatedAt: now.toISOString() }
+      { id: 1, title: '欢迎使用提醒事项', notes: '双击事项可编辑，关闭主窗口会自动显示悬浮小窗。', listId: 'default', priority: 0, due: null, repeat: null, tags: [], subtasks: [], completed: false, completedAt: null, createdAt: now.toISOString(), updatedAt: now.toISOString() }
     ],
     lists: [
       { id: 'default', name: '提醒事项', color: '#007AFF' },
@@ -55,7 +41,7 @@ function defaultData() {
       hotkeyMain: 'CommandOrControl+Shift+M',
       hotkeyFloat: 'CommandOrControl+Shift+F'
     },
-    nextId: 7,
+    nextId: 2,
     version: 2
   };
 }
@@ -65,7 +51,9 @@ function load() {
   ensure();
   try {
     cache = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
-    validateData(cache);
+    const migrated = validateData(cache);
+    // M1: 迁移结果持久化，避免每次启动重复迁移
+    if (migrated) save();
   } catch (e) {
     // 尝试 .bak 备份
     let recovered = false;
@@ -75,6 +63,13 @@ function load() {
         validateData(cache);
         recovered = true;
         console.log('Recovered from .bak file');
+        // S1: 恢复后也需移走损坏的 DATA_FILE，避免 save() 将其复制到 .bak
+        try {
+          if (fs.existsSync(CORRUPT_FILE)) fs.unlinkSync(CORRUPT_FILE);
+          fs.renameSync(DATA_FILE, CORRUPT_FILE);
+        } catch (e3) {
+          try { fs.unlinkSync(DATA_FILE); } catch (e4) {}
+        }
       } catch (e2) {}
     }
     if (!recovered) {
@@ -97,6 +92,7 @@ function validateData(d) {
     throw new Error('Invalid data structure');
   }
   if (typeof d.nextId !== 'number') d.nextId = d.reminders.length + 1;
+  let migrated = false;
   // C3: 旧优先级迁移 (v1: 0=普通,1=高,2=中 → v2: 0=普通,1=中,2=高)
   if (!d.version || d.version < 2) {
     d.reminders.forEach(r => {
@@ -104,11 +100,13 @@ function validateData(d) {
       else if (r.priority === 2) r.priority = 1;  // 旧"中"→新"中"
     });
     d.version = 2;
+    migrated = true;
   }
   // L4: 钳制越界优先级
   d.reminders.forEach(r => {
     if (typeof r.priority !== 'number' || r.priority < 0 || r.priority > 2) r.priority = 0;
   });
+  return migrated;
 }
 
 // #4 原子写入: 先写 .tmp 再 rename, 保留 .bak 备份
@@ -162,7 +160,16 @@ function computeNextDue(due, repeat) {
       if (d.getDate() !== origDay) d.setDate(0); // 月末溢出，回退到目标月最后一天
       break;
     }
-    case 'yearly': d.setFullYear(d.getFullYear() + 1); break;
+    case 'yearly': {
+      const origMonth = d.getMonth();
+      d.setFullYear(d.getFullYear() + 1);
+      // L6: 闰年2月29日yearly重复在非闰年会漂移到3月1日，回退到2月28日
+      if (d.getMonth() !== origMonth) {
+        d.setMonth(origMonth);
+        d.setDate(28);
+      }
+      break;
+    }
     default: return null;
   }
   return d.toISOString();
@@ -201,7 +208,7 @@ function create(data) {
   const d = get();
   const r = {
     id: genIdNoSave(),
-    title: (data.title || '').trim(),
+    title: String(data.title || '').trim(), // G6: 类型强制
     notes: data.notes || '',
     listId: data.listId || 'default',
     priority: data.priority || 0,
@@ -235,6 +242,8 @@ function update(id, patch) {
           done: !!s.done
         };
       });
+    } else if (f === 'title') {
+      r.title = String(patch.title || '').trim(); // G6: 类型强制
     } else {
       r[f] = patch[f];
     }
@@ -244,26 +253,19 @@ function update(id, patch) {
   return r;
 }
 
-// #9 防重复生成: spawned 标记
-function toggle(id) {
-  const r = getById(id);
-  if (!r) return null;
-  // C1: 只 toggle 一次 (之前有重复行互相抵消)
-  r.completed = !r.completed;
-  r.completedAt = r.completed ? nowISO() : null;
-  // M1: 取消完成时清除 spawned 标记 + 删除已生成的下一次提醒
-  if (!r.completed) {
-    // 取消完成: 清除 spawned 标记，删除已生成的下一次
-    if (r.spawnedId) {
-      const d = get();
-      const idx = d.reminders.findIndex(x => x.id === r.spawnedId);
-      if (idx >= 0) d.reminders.splice(idx, 1);
-      r.spawnedId = null;
-    }
-    r.spawned = false;
+// 问题3: 完成提醒事项（可联动子任务），并处理重复生成
+function completeReminder(r, cascadeSubtasks) {
+  r.completed = true;
+  r.completedAt = nowISO();
+  if (cascadeSubtasks && r.subtasks && r.subtasks.length) {
+    r.subtasks.forEach(s => { s.done = true; });
   }
-  if (r.completed && r.due && r.repeat && !r.spawned) {
-    const nextDue = computeNextDue(r.due, r.repeat);
+  if (r.due && r.repeat && !r.spawned) {
+    let nextDue = computeNextDue(r.due, r.repeat);
+    const now = Date.now();
+    while (nextDue && new Date(nextDue).getTime() <= now) {
+      nextDue = computeNextDue(nextDue, r.repeat);
+    }
     if (nextDue) {
       const d = get();
       const nr = {
@@ -278,9 +280,33 @@ function toggle(id) {
       };
       d.reminders.push(nr);
       r.spawned = true;
-      r.spawnedId = nr.id; // 记录生成的下次提醒 ID
+      r.spawnedId = nr.id;
     }
   }
+}
+
+// 问题3: 取消完成提醒事项（可联动子任务），清理重复生成
+function uncompleteReminder(r, cascadeSubtasks) {
+  r.completed = false;
+  r.completedAt = null;
+  if (cascadeSubtasks && r.subtasks && r.subtasks.length) {
+    r.subtasks.forEach(s => { s.done = false; });
+  }
+  if (r.spawnedId) {
+    const d = get();
+    const idx = d.reminders.findIndex(x => x.id === r.spawnedId);
+    if (idx >= 0) d.reminders.splice(idx, 1);
+    r.spawnedId = null;
+  }
+  r.spawned = false;
+}
+
+// #9 防重复生成: spawned 标记
+function toggle(id) {
+  const r = getById(id);
+  if (!r) return null;
+  if (r.completed) uncompleteReminder(r, true);  // 问题3: 联动子任务
+  else completeReminder(r, true);
   save();
   return r;
 }
@@ -298,13 +324,20 @@ function remove(id) {
 
 
 
-// #21 null 守卫
+// #21 null 守卫 + 问题3: 子任务联动提醒事项完成状态
 function toggleSubtask(id, subId) {
   const r = getById(id);
   if (!r) return null;
   const subtasks = r.subtasks || [];
   const s = subtasks.find(x => x.id === Number(subId));
   if (s) s.done = !s.done;
+  // 问题3: 所有子任务完成 → 自动完成提醒事项
+  if (subtasks.length > 0 && subtasks.every(x => x.done)) {
+    if (!r.completed) completeReminder(r, false);
+  } else if (r.completed && subtasks.some(x => !x.done)) {
+    // 问题3: 有子任务取消完成 → 自动取消完成提醒事项
+    uncompleteReminder(r, false);
+  }
   save();
   return r;
 }
@@ -343,7 +376,11 @@ function getSettings() { return get().settings; }
 
 function updateSettings(patch) {
   const d = get();
-  Object.assign(d.settings, patch);
+  patch = patch || {};
+  // M5: 白名单过滤，防止注入任意键
+  ALLOWED_SETTINGS.forEach(k => {
+    if (k in patch) d.settings[k] = patch[k];
+  });
   save();
   return d.settings;
 }

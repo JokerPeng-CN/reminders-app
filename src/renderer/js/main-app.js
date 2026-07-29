@@ -120,28 +120,11 @@ createApp({
 
     function setView(v) { view.value = v; }
 
-    function dueClass(r) {
-      const d = new Date(r.due);
-      const today = new Date(); today.setHours(0,0,0,0);
-      const t = new Date(today); t.setDate(t.getDate()+1);
-      if (d < today) return 'overdue';
-      if (d < t) return 'today';
-      return '';
-    }
+    // L5: 使用共享工具函数
+    function dueClass(r) { return window.ReminderUtil.dueClass(r); }
+    function dueText(r) { return window.ReminderUtil.dueText(r); }
 
-    function dueText(r) {
-      const d = new Date(r.due);
-      const today = new Date(); today.setHours(0,0,0,0);
-      const t = new Date(today); t.setDate(t.getDate()+1);
-      const time = d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
-      if (d < today) return '已逾期 · ' + formatDate(d);
-      if (d < t) return '今天 ' + time;
-      const t2 = new Date(today); t2.setDate(t2.getDate()+2);
-      if (d < t2) return '明天 ' + time;
-      return formatDate(d); // #19: 移除不可达的 isSameDay 分支
-    }
-
-    function formatDate(d) { return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
+    function formatDate(d) { return window.ReminderUtil.formatDate(d); }
     function prioText(p) { return p===2?'高':(p===1?'中':''); } // #29: 2=高, 1=中
     function repeatText(rp) {
       return { daily:'每天', weekdays:'工作日', weekly:'每周', monthly:'每月', yearly:'每年' }[rp] || rp;
@@ -387,6 +370,8 @@ createApp({
       window.api.onNewReminder(() => { openEditor(null); });
       window.api.onToggleTheme(() => { toggleTheme(); });
       window.api.onOpenHelp(() => { helpOpen.value = true; });
+      window.api.onThemeChanged((newTheme) => { theme.value = newTheme; applyTheme(); settings.data.theme = newTheme; }); // 问题1: 悬浮窗主题同步
+      window.api.onRefresh(() => loadAll()); // 问题2: 悬浮窗操作后刷新主窗
     });
 
     onUnmounted(() => {

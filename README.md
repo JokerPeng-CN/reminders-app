@@ -68,8 +68,8 @@ reminders-app/
 
 ## 打包产物
 
-- `release/提醒事项 Setup 1.0.0.exe` — NSIS 安装包
-- `release/win-unpacked/提醒事项.exe` — 免安装版
+- `release/提醒事项 Setup 2.0.0.exe` — NSIS 安装包
+- `release/提醒事项 2.0.0.exe` — 免安装版
 
 ## 协议
 

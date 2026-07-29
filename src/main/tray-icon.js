@@ -30,10 +30,34 @@ const DIGITS = {
   '9': ['01110','10001','10001','01111','00001','00010','01100']
 };
 
+// 问题2: 绘制对勾路径上的像素 (简化版 checkmark)
+function isCheckmark(x, y, size) {
+  const cx = (size - 1) / 2, cy = (size - 1) / 2;
+  const thick = Math.max(1, size * 0.08);
+  // 对勾三点: 左下 → 中下 → 右上
+  const p1 = [cx - size * 0.18, cy + size * 0.02];
+  const p2 = [cx - size * 0.04, cy + size * 0.16];
+  const p3 = [cx + size * 0.22, cy - size * 0.16];
+  return distToSeg(x, y, p1, p2) <= thick || distToSeg(x, y, p2, p3) <= thick;
+}
+
+function distToSeg(px, py, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const l2 = dx * dx + dy * dy;
+  if (l2 === 0) return Math.hypot(px - a[0], py - a[1]);
+  let t = ((px - a[0]) * dx + (py - a[1]) * dy) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (a[0] + t * dx), py - (a[1] + t * dy));
+}
+
 function makeTrayPNG(size, count) {
   const cx = (size - 1) / 2, cy = (size - 1) / 2;
   const radius = size * 0.46;
-  const innerRadius = size * 0.38;
+
+  // 问题2: 徽标圆 (右下角)
+  const badgeR = size * 0.20;
+  const badgeCX = size * 0.72;
+  const badgeCY = size * 0.72;
 
   const rowLen = size * 4;
   const raw = Buffer.alloc((1 + rowLen) * size);
@@ -44,25 +68,38 @@ function makeTrayPNG(size, count) {
     for (let x = 0; x < size; x++) {
       const i = rowStart + 1 + x * 4;
       const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
-      if (dist > radius) {
-        // 透明
-        raw[i] = 0; raw[i+1] = 0; raw[i+2] = 0; raw[i+3] = 0;
-      } else {
+      let r = 0, g = 0, b = 0, a = 0;
+
+      if (dist <= radius) {
         // 蓝色底 #007AFF
-        let r = 0, g = 122, b = 255, a = 255;
+        r = 0; g = 122; b = 255; a = 255;
         // 边缘抗锯齿
         if (dist > radius - 1) {
           a = Math.round(255 * (radius - dist));
         }
-        // 如果有数字,绘制白色数字
-        if (count > 0) {
+        // 白色对勾
+        if (isCheckmark(x, y, size)) {
+          r = 255; g = 255; b = 255; a = 255;
+        }
+      }
+
+      // 问题2: 右下角徽标 (红色圆 + 白色数字)
+      if (count > 0) {
+        const bdist = Math.sqrt((x - badgeCX) ** 2 + (y - badgeCY) ** 2);
+        if (bdist <= badgeR) {
+          r = 255; g = 59; b = 48; a = 255; // 红色 #FF3B30
+          // 边缘抗锯齿
+          if (bdist > badgeR - 1) {
+            a = Math.round(255 * (badgeR - bdist));
+          }
+          // 白色数字
           const str = count > 99 ? '99' : String(count);
           const dw = 5, dh = 7;
           const totalW = str.length * (dw + 1) - 1;
-          const scaleX = Math.max(1, Math.floor(size / 16));
+          const scaleX = Math.max(1, Math.floor(size / 24));
           const scaleY = scaleX;
-          const startX = Math.round(cx - (totalW * scaleX) / 2);
-          const startY = Math.round(cy - (dh * scaleY) / 2);
+          const startX = Math.round(badgeCX - (totalW * scaleX) / 2);
+          const startY = Math.round(badgeCY - (dh * scaleY) / 2);
           for (let si = 0; si < str.length; si++) {
             const glyph = DIGITS[str[si]];
             if (!glyph) continue;
@@ -82,8 +119,9 @@ function makeTrayPNG(size, count) {
             }
           }
         }
-        raw[i] = r; raw[i+1] = g; raw[i+2] = b; raw[i+3] = a;
       }
+
+      raw[i] = r; raw[i + 1] = g; raw[i + 2] = b; raw[i + 3] = a;
     }
   }
 

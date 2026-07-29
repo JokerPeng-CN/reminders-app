@@ -18,8 +18,10 @@ contextBridge.exposeInMainWorld('api', {
   exportData: () => ipcRenderer.invoke('store:export'),
   importData: (str) => ipcRenderer.invoke('store:import', str),
   toggleFloat: () => ipcRenderer.send('main:toggleFloat'),
-  onFocusReminder: (cb) => ipcRenderer.on('focus-reminder', (e, id) => cb(id)),
-  onNewReminder: (cb) => ipcRenderer.on('new-reminder', (e) => cb()),
-  onToggleTheme: (cb) => ipcRenderer.on('toggle-theme', () => cb()),
-  onOpenHelp: (cb) => ipcRenderer.on('open-help', () => cb())
+  onFocusReminder: (cb) => { const h = (e, id) => cb(id); ipcRenderer.on('focus-reminder', h); return () => ipcRenderer.removeListener('focus-reminder', h); }, // G5: 返回清理函数
+  onNewReminder: (cb) => { const h = (e) => cb(); ipcRenderer.on('new-reminder', h); return () => ipcRenderer.removeListener('new-reminder', h); },
+  onToggleTheme: (cb) => { const h = () => cb(); ipcRenderer.on('toggle-theme', h); return () => ipcRenderer.removeListener('toggle-theme', h); },
+  onOpenHelp: (cb) => { const h = () => cb(); ipcRenderer.on('open-help', h); return () => ipcRenderer.removeListener('open-help', h); },
+  onThemeChanged: (cb) => { const h = (e, theme) => cb(theme); ipcRenderer.on('theme-changed', h); return () => ipcRenderer.removeListener('theme-changed', h); }, // 问题1: 接收主题变更
+  onRefresh: (cb) => { const h = () => cb(); ipcRenderer.on('main:refresh', h); return () => ipcRenderer.removeListener('main:refresh', h); } // 问题2: 接收刷新信号
 });

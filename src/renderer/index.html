@@ -106,8 +106,9 @@
 
     <!-- 编辑器 -->
     <div v-if="editor.open" class="overlay" @click.self="editor.open=false">
-      <div class="editor">
+      <div class="editor sticky">
         <h3>{{editor.data.id?'编辑提醒':'新建提醒'}}</h3>
+        <div class="editor-body">
         <div class="field">
           <label>标题 <span class="required">*</span></label>
           <input v-model="editor.data.title" @keyup.enter="save" placeholder="请输入提醒事项标题（必填）" :class="{'input-error': editor.error}">
@@ -165,6 +166,7 @@
               <span class="sub-bullet"></span><span class="sub-name">{{s.title}}</span><span class="rm" @click="removeSubtask(s.id)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
             </div>
           </div>
+        </div>
         </div>
         <div class="btn-row">
           <button class="btn ghost" @click="editor.open=false">取消</button>
@@ -292,6 +294,7 @@
   </div>
 
   <script src="lib/vue.global.prod.js"></script>
+  <script src="js/util.js"></script>
   <script src="js/main-app.js"></script>
 </body>
 </html>

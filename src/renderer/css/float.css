@@ -115,6 +115,36 @@ body {
 .i-prio.p1 { background: var(--warn); }   /* 中等 */
 .i-prio.p2 { background: var(--danger); }  /* 高 */
 
+/* 需求1: 展开图标 */
+.expand-icon { display: inline-flex; vertical-align: middle; margin-left: 4px; transition: .2s; }
+.expand-icon svg { width: 12px; height: 12px; }
+.expand-icon.open { transform: rotate(180deg); }
+
+/* 需求1: 展开的子任务列表 */
+.item-wrap { margin-bottom: 3px; }
+.item.expanded { margin-bottom: 0; border-radius: 11px 11px 0 0; }
+.subtasks-mini {
+  background: rgba(0,0,0,0.03); border-radius: 0 0 11px 11px; padding: 4px 8px 6px;
+  -webkit-app-region: no-drag;
+}
+[data-theme="dark"] .subtasks-mini { background: rgba(255,255,255,0.04); }
+.subtask-mini { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
+.subtask-mini.done .sub-title-mini { color: var(--text-3); text-decoration: line-through; }
+.sub-ck-mini {
+  width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--text-3);
+  flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: .15s;
+}
+.sub-ck-mini:hover { border-color: var(--accent); }
+.sub-ck-mini.done { background: var(--accent); border-color: var(--accent); }
+.sub-ck-mini.done::after {
+  content: '';
+  width: 9px; height: 9px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+.sub-title-mini { flex: 1; word-break: break-word; }
+
 .footer {
   display: flex; gap: 6px; padding-top: 8px;
   border-top: 1px solid var(--border); margin-top: 4px;

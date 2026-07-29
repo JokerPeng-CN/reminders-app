@@ -7,8 +7,9 @@ createApp({
     const adding = ref(false);
     const newTitle = ref('');
     const addInput = ref(null);
+    const expandedId = ref(null); // 需求1: 当前展开子任务的提醒ID
 
-    async function refresh() { // #25: 加错误处理
+    async function refresh() {
       try {
         settings.value = await window.floatApi.getSettings();
         items.value = await window.floatApi.getRecent(settings.value.floatCount || 6);
@@ -20,9 +21,32 @@ createApp({
       document.documentElement.setAttribute('data-theme', t || 'light');
     }
 
+    // 需求4: 主题切换
+    async function toggleTheme() {
+      const newTheme = settings.value.theme === 'light' ? 'dark' : 'light';
+      settings.value.theme = newTheme;
+      applyTheme(newTheme);
+      try { await window.floatApi.updateSettings({ theme: newTheme }); } catch (e) { console.error(e); }
+    }
+
+    // 需求4: 最小化为logo
+    function minimize() { window.floatApi.minimize(); }
+
+    // 需求1: 展开/折叠子任务
+    function toggleExpand(id) {
+      if (expandedId.value === id) expandedId.value = null;
+      else expandedId.value = id;
+    }
+
     async function toggle(id) {
       try { await window.floatApi.toggle(id); await refresh(); }
       catch (e) { console.error('float toggle error', e); }
+    }
+
+    // 需求1: 子任务勾选
+    async function toggleSub(id, subId) {
+      try { await window.floatApi.toggleSubtask(id, subId); await refresh(); }
+      catch (e) { console.error('float toggleSub error', e); }
     }
 
     function hide() { window.floatApi.hide(); }
@@ -54,34 +78,21 @@ createApp({
       newTitle.value = '';
     }
 
+    // L5: 使用共享工具函数（悬浮窗逾期显示简短文本）
     function dueClass(r) {
-      const d = new Date(r.due);
-      const today = new Date(); today.setHours(0,0,0,0);
-      const t = new Date(today); t.setDate(t.getDate()+1);
-      if (d < today) return 'overdue';
-      if (d < t) return 'today';
-      return 'normal';
+      const cls = window.ReminderUtil.dueClass(r);
+      return cls || 'normal';
     }
-
-    function dueText(r) {
-      const d = new Date(r.due);
-      const today = new Date(); today.setHours(0,0,0,0);
-      const t = new Date(today); t.setDate(t.getDate()+1);
-      const time = d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
-      if (d < today) return '已逾期';
-      if (d < t) return '今天 ' + time;
-      const t2 = new Date(today); t2.setDate(t2.getDate()+2);
-      if (d < t2) return '明天 ' + time;
-      return (d.getMonth()+1)+'月'+d.getDate()+'日';
-    }
+    function dueText(r) { return window.ReminderUtil.dueText(r, { overduePrefix: '已逾期' }); }
 
     onMounted(() => {
       refresh();
       window.floatApi.onRefresh(() => refresh());
     });
 
-    return { items, settings, adding, newTitle, addInput,
-             toggle, hide, showMain, startAdd, confirmAdd, cancelAdd,
+    return { items, settings, adding, newTitle, addInput, expandedId,
+             toggle, toggleSub, hide, showMain, startAdd, confirmAdd, cancelAdd,
+             toggleExpand, toggleTheme, minimize,
              dueClass, dueText };
   }
 }).mount('#app');
