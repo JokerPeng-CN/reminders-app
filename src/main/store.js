@@ -117,7 +117,7 @@ function save(data) {
     try {
       fs.copyFileSync(DATA_FILE, BAK_TMP_FILE);
       fs.renameSync(BAK_TMP_FILE, BAK_FILE);
-    } catch (e) {}
+    } catch (e) { console.warn('backup failed', e.message); }
   }
   try {
     fs.renameSync(TMP_FILE, DATA_FILE);
@@ -140,12 +140,6 @@ function genIdNoSave() {
 
 function nowISO() {
   return new Date().toISOString();
-}
-
-function startOfDay(d = new Date()) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
 }
 
 // #45 月重复处理月末溢出

@@ -285,7 +285,6 @@ createApp({
 
     function openSettings() {
       settings.open = true;
-      settings.data = toPlain(settings.data);
     }
     async function saveSettings() {
       try {

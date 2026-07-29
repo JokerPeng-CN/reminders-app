@@ -403,9 +403,9 @@ ipcMain.handle('store:update', wrapHandler((e, id, patch) => { const r = store.u
 ipcMain.handle('store:toggle', wrapHandler((e, id) => { const r = store.toggle(id); updateTray(); refreshFloat(); refreshMain(); return r; }));
 ipcMain.handle('store:remove', wrapHandler((e, id) => { const r = store.remove(id); updateTray(); refreshFloat(); refreshMain(); return r; }));
 ipcMain.handle('store:toggleSubtask', wrapHandler((e, id, subId) => { const r = store.toggleSubtask(id, subId); updateTray(); refreshFloat(); refreshMain(); return r; })); // L3+问题2: 刷新悬浮窗+主窗
-ipcMain.handle('store:createList', wrapHandler((e, name, color) => store.createList(name, color)));
-ipcMain.handle('store:updateList', wrapHandler((e, id, patch) => store.updateList(id, patch)));
-ipcMain.handle('store:deleteList', wrapHandler((e, id) => store.deleteList(id)));
+ipcMain.handle('store:createList', wrapHandler((e, name, color) => { const r = store.createList(name, color); refreshFloat(); refreshMain(); return r; }));
+ipcMain.handle('store:updateList', wrapHandler((e, id, patch) => { const r = store.updateList(id, patch); refreshFloat(); refreshMain(); return r; }));
+ipcMain.handle('store:deleteList', wrapHandler((e, id) => { const r = store.deleteList(id); refreshFloat(); refreshMain(); return r; }));
 ipcMain.handle('store:getSettings', wrapHandler(() => store.getSettings()));
 ipcMain.handle('store:updateSettings', wrapHandler((e, patch) => {
   const s = store.updateSettings(patch);
