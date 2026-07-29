@@ -29,7 +29,7 @@ function check() {
       }
     });
     const active = new Set(store.getActive().map(r => r.id));
-    notifiedIds.forEach(id => { if (!active.has(id)) notifiedIds.delete(id); });
+    notifiedIds = new Set([...notifiedIds].filter(id => active.has(id)));
   } catch (e) {
     console.error('notify check error', e);
   }

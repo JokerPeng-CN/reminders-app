@@ -8,6 +8,8 @@ const TMP_FILE = DATA_FILE + '.tmp';
 const BAK_FILE = DATA_FILE + '.bak';
 const CORRUPT_FILE = DATA_FILE + '.corrupt';
 
+const BAK_TMP_FILE = BAK_FILE + '.tmp';
+
 let cache = null;
 
 // #2 update() 允许修改的字段白名单
@@ -46,16 +48,24 @@ function defaultData() {
   };
 }
 
+// 损坏的 DATA_FILE 移走，防止 save() 将其复制到 .bak
+function moveCorruptFile() {
+  try {
+    if (fs.existsSync(CORRUPT_FILE)) fs.unlinkSync(CORRUPT_FILE);
+    fs.renameSync(DATA_FILE, CORRUPT_FILE);
+  } catch (e3) {
+    try { fs.unlinkSync(DATA_FILE); } catch (e4) {}
+  }
+}
+
 // #5 损坏文件不静默覆盖，移到 .corrupt
 function load() {
   ensure();
   try {
     cache = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
     const migrated = validateData(cache);
-    // M1: 迁移结果持久化，避免每次启动重复迁移
     if (migrated) save();
   } catch (e) {
-    // 尝试 .bak 备份
     let recovered = false;
     if (fs.existsSync(BAK_FILE)) {
       try {
@@ -63,23 +73,11 @@ function load() {
         validateData(cache);
         recovered = true;
         console.log('Recovered from .bak file');
-        // S1: 恢复后也需移走损坏的 DATA_FILE，避免 save() 将其复制到 .bak
-        try {
-          if (fs.existsSync(CORRUPT_FILE)) fs.unlinkSync(CORRUPT_FILE);
-          fs.renameSync(DATA_FILE, CORRUPT_FILE);
-        } catch (e3) {
-          try { fs.unlinkSync(DATA_FILE); } catch (e4) {}
-        }
+        moveCorruptFile();
       } catch (e2) {}
     }
     if (!recovered) {
-      // H5: 先删除损坏的 DATA_FILE，避免 save() 将其复制到 .bak
-      try {
-        if (fs.existsSync(CORRUPT_FILE)) fs.unlinkSync(CORRUPT_FILE);
-        fs.renameSync(DATA_FILE, CORRUPT_FILE);
-      } catch (e3) {
-        try { fs.unlinkSync(DATA_FILE); } catch (e4) {}
-      }
+      moveCorruptFile();
       cache = defaultData();
     }
     save();
@@ -116,7 +114,10 @@ function save(data) {
   const json = JSON.stringify(cache, null, 2);
   fs.writeFileSync(TMP_FILE, json, 'utf-8');
   if (fs.existsSync(DATA_FILE)) {
-    try { fs.copyFileSync(DATA_FILE, BAK_FILE); } catch (e) {}
+    try {
+      fs.copyFileSync(DATA_FILE, BAK_TMP_FILE);
+      fs.renameSync(BAK_TMP_FILE, BAK_FILE);
+    } catch (e) {}
   }
   try {
     fs.renameSync(TMP_FILE, DATA_FILE);
