@@ -1,5 +1,8 @@
 node_modules/
 release/
+release/*.blockmap
+release/builder-debug.yml
+release/latest.yml
 src/renderer/lib/vue.global.prod.js
 *.tmp
 *.bak
