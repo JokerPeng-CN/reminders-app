@@ -350,7 +350,7 @@ function setupMenu() {
       label: '帮助',
       submenu: [
         { label: '使用说明', accelerator: 'F1', click: () => { showMain(); sendToMain('open-help'); } },
-        { label: '关于提醒事项', click: () => { require('electron').dialog.showMessageBox(mainWindow && !mainWindow.isDestroyed() ? mainWindow : null, { type: 'info', title: '关于', message: '提醒事项 ' + require('../package.json').version, detail: '一款轻量级桌面待办提醒应用。\n\n功能特点：\n· 分类管理与自定义清单\n· 悬浮小窗快速查看\n· 系统通知与重复提醒\n· 深色 / 浅色主题\n· 全局快捷键支持\n\n数据存储在本地，安全可靠。' }); } }
+        { label: '关于提醒事项', click: () => { require('electron').dialog.showMessageBox(mainWindow && !mainWindow.isDestroyed() ? mainWindow : null, { type: 'info', title: '关于', message: '提醒事项 ' + require('../../package.json').version, detail: '一款轻量级桌面待办提醒应用。\n\n功能特点：\n· 分类管理与自定义清单\n· 悬浮小窗快速查看\n· 系统通知与重复提醒\n· 深色 / 浅色主题\n· 全局快捷键支持\n\n数据存储在本地，安全可靠。' }); } }
       ]
     }
   ];

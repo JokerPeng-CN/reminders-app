@@ -100,9 +100,11 @@ function validateData(d) {
     d.version = 2;
     migrated = true;
   }
-  // L4: 钳制越界优先级
+  // L4: 钳制越界优先级；补全时间字段（旧数据可能缺失 updatedAt/createdAt）
   d.reminders.forEach(r => {
     if (typeof r.priority !== 'number' || r.priority < 0 || r.priority > 2) r.priority = 0;
+    if (!r.createdAt) { r.createdAt = r.updatedAt || nowISO(); migrated = true; }
+    if (!r.updatedAt) { r.updatedAt = r.createdAt || nowISO(); migrated = true; }
   });
   return migrated;
 }

@@ -63,9 +63,15 @@
         </div>
       </div>
 
-      <div class="search">
-        <span class="sicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-        <input v-model="query" placeholder="搜索提醒事项…">
+      <div class="search-row">
+        <div class="search">
+          <span class="sicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          <input v-model="query" placeholder="搜索提醒事项…">
+        </div>
+        <div class="search date-search">
+          <span class="sicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+          <input type="date" v-model="dateQuery" title="按最后编辑日期筛选">
+        </div>
       </div>
 
       <div class="addbar">
@@ -95,8 +101,10 @@
                 <span class="sub-title">{{s.title}}</span>
               </div>
             </div>
+            <div v-if="updatedText(r)" class="r-updated">{{updatedText(r)}}</div>
           </div>
           <div class="r-actions">
+            <button class="r-mini" title="复制" @click.stop="duplicate(r.id)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
             <button class="r-mini" title="编辑" @click.stop="openEditor(r)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
             <button class="r-mini" title="删除" @click.stop="remove(r.id)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
           </div>
@@ -163,7 +171,8 @@
           </div>
           <div class="sub-list">
             <div v-for="s in editor.data.subtasks" :key="s.id" class="sub-list-item">
-              <span class="sub-bullet"></span><span class="sub-name">{{s.title}}</span><span class="rm" @click="removeSubtask(s.id)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+              <span class="sub-bullet"></span><span class="sub-name">{{s.title}}</span>
+              <button type="button" class="rm-btn" title="删除子任务" @click="removeSubtask(s.id)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
           </div>
         </div>

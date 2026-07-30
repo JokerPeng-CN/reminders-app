@@ -6,6 +6,7 @@ createApp({
     const lists = ref([]);
     const view = ref('all');
     const query = ref('');
+    const dateQuery = ref('');
     const quickTitle = ref('');
     const theme = ref('light');
     const editor = reactive({ open: false, data: null, newSub: '', error: '' });
@@ -100,6 +101,17 @@ createApp({
         const q = query.value.toLowerCase();
         arr = arr.filter(r => (r.title||'').toLowerCase().includes(q) || (r.notes||'').toLowerCase().includes(q));
       }
+      // 日期搜索：按最后编辑时间（updatedAt）过滤，用本地日期口径与 updatedText 一致
+      if (dateQuery.value) {
+        const dq = dateQuery.value; // yyyy-mm-dd
+        arr = arr.filter(r => {
+          if (!r.updatedAt) return false;
+          const d = new Date(r.updatedAt);
+          if (isNaN(d.getTime())) return false;
+          const local = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+          return local === dq;
+        });
+      }
 
       arr.sort((a, b) => {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
@@ -125,6 +137,16 @@ createApp({
     function dueText(r) { return window.ReminderUtil.dueText(r); }
 
     function prioText(p) { return p===2?'高':(p===1?'中':''); } // #29: 2=高, 1=中
+    // 最后编辑时间：格式化为 yyyy-mm-dd
+    function updatedText(r) {
+      if (!r.updatedAt) return '';
+      const d = new Date(r.updatedAt);
+      if (isNaN(d.getTime())) return '';
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
     function repeatText(rp) {
       return { daily:'每天', weekdays:'工作日', weekly:'每周', monthly:'每月', yearly:'每年' }[rp] || rp;
     }
@@ -228,6 +250,24 @@ createApp({
     async function remove(id) {
       try { await window.api.remove(id); await loadAll(); }
       catch (e) { console.error('remove error', e); }
+    }
+    // 复制提醒：复制一条相同数据（不含完成状态和子任务完成状态）
+    async function duplicate(id) {
+      try {
+        const r = reminders.value.find(x => x.id === id);
+        if (!r) return;
+        await window.api.create({
+          title: r.title || '',
+          notes: r.notes || '',
+          listId: r.listId || 'default',
+          priority: r.priority || 0,
+          due: r.due || null,
+          repeat: r.repeat || null,
+          tags: (r.tags || []).slice(),
+          subtasks: (r.subtasks || []).map(s => ({ title: s.title, done: false }))
+        });
+        await loadAll();
+      } catch (e) { console.error('duplicate error', e); }
     }
 
     // ---------- 清单管理 ----------
@@ -383,11 +423,11 @@ createApp({
     });
 
     return {
-      reminders, lists, view, query, quickTitle, theme, editor, settings, settingDefs,
+      reminders, lists, view, query, dateQuery, quickTitle, theme, editor, settings, settingDefs,
       listEditor, helpOpen, presetColors,
       counts, listCounts, filtered, viewTitle,
-      setView, listName, listColor, dueClass, dueText, prioText, repeatText,
-      openEditor, save, quickAdd, toggle, toggleSub, remove,
+      setView, listName, listColor, dueClass, dueText, prioText, repeatText, updatedText,
+      openEditor, save, quickAdd, toggle, toggleSub, remove, duplicate,
       openListEditor, saveList, deleteListFromEditor,
       toggleFloat, toggleTheme, openSettings, closeSettings, saveSettings, exportData, importData, addSub, removeSubtask,
       captureKey, openHelp
